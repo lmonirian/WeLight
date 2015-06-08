@@ -2,8 +2,8 @@ from flask import Flask,request, make_response, jsonify
 import requests;
 import json;
 
-ACCESSTOKEN='dnZhMGZ5Q3VBc2ltbGZNaFAyTWJ2UG9NMmloK1dsSFFOV0gyMTczRzhXVT0='
-BRIDGEID='001788fffe174db2'
+ACCESSTOKEN=''
+BRIDGEID=''
 
 #setup
 API_ADDRESS_CONTROL = 'https://www.meethue.com/api/sendmessage'
@@ -18,7 +18,7 @@ DELETE = 'DELETE'
 POST = 'POST'
 
 
-def constructCustomMsg(apiEndPoint, command, method):
+def constructCustomMsg(apiEndPoint, command, method, bridgeId):
   """
   method can be PUT/POST/GET all must be string
   apiEndPoint is 
@@ -36,31 +36,31 @@ def constructCustomMsg(apiEndPoint, command, method):
   """
   #apiEndPoint and command needs to be string
   #command needs to conform to json format
-  custom_control_message_structure = 'clipmessage={ bridgeId: "'+BRIDGEID+'", clipCommand: { url: "/api/0/'+apiEndPoint+'", method: "'+method+'", body: '+command+' } }'
+  custom_control_message_structure = 'clipmessage={ bridgeId: "'+bridgeId+'", clipCommand: { url: "/api/0/'+apiEndPoint+'", method: "'+method+'", body: '+command+' } }'
   return custom_control_message_structure
 
-def philipsControlCustom(msgToSent):
+def philipsControlCustom(msgToSent, accessToken):
   """
   actual message sender
 
   """
-  payload = {'token':ACCESSTOKEN};
+  payload = {'token':accessToken};
   r = requests.post(API_ADDRESS_CONTROL, params=payload,headers=headers,data=msgToSent);
   return r.text
 
-def getPhilipsHueInfo():
+def getPhilipsHueInfo(accessToken, bridgeId):
   """
   This method get all info related the the hue bridge
 
   """
-  payload = {'token': ACCESSTOKEN, 'bridgeid': BRIDGEID};
+  payload = {'token': accessToken, 'bridgeid': bridgeId};
   print payload
   r = requests.get(API_STATUS_ADDRESS, params=payload)
   print (json.dumps(json.loads(r.content),indent=4))
   res = json.loads(r.content);
   return res
 
-def api(request,path):
+def api(request,path, accessToken, bridgeId):
   """
   This class can handle PUT and POST, as a pass-through layer to the official API.
   The response code will always be 200 regardless of the status.
@@ -84,10 +84,10 @@ def api(request,path):
       print "JSON String: {}".format(json.dumps(result))
       command = json.dumps(result)
       apiEndPoint = path
-      contentToBeRequested=constructCustomMsg(apiEndPoint, command, request.method)
+      contentToBeRequested=constructCustomMsg(apiEndPoint, command, request.method, bridgeId)
       print "constructed custom msg: {}".format(contentToBeRequested)
       print "sending control"
-      response = make_response(philipsControlCustom(contentToBeRequested))
+      response = make_response(philipsControlCustom(contentToBeRequested, accessToken))
       # response = make_response('{"status":200}')
       response.mimetype='application/json'
       return response
