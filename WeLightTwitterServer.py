@@ -2,6 +2,7 @@ import nltk
 import sys
 import sqlite3
 import tweepy
+import time
 
 from callapi import *
 
@@ -48,7 +49,23 @@ auth.set_access_token("3235468296-2TzMkX6CASeJ8GTBcCIoHOT8PUuD5Zq9FknSwSG", "OuR
 api = tweepy.API(auth)
 direct_messages = api.direct_messages()
 
+highest_dm_id = 0
+
+print "Old messages:"
 for dm in direct_messages:
     print "(" + str(dm.id) + ") " + dm.sender_screen_name +" : "+ dm.text
+    if dm.id > highest_dm_id:
+        highest_dm_id = dm.id
+
+print "New messages:"
+
+while True:
+    direct_messages = api.direct_messages(highest_dm_id)
+    for dm in direct_messages:
+        print "(" + str(dm.id) + ") " + dm.sender_screen_name +" : "+ dm.text
+        # todo process light command here. 
+        if dm.id > highest_dm_id:
+            highest_dm_id = dm.id
+    time.sleep(60)
     
 
