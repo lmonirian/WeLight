@@ -1,17 +1,9 @@
 import nltk
 import sys
 import sqlite3
+import tweepy
 
 from callapi import *
-
-
-# lab
-# aToken='dnZhMGZ5Q3VBc2ltbGZNaFAyTWJ2UG9NMmloK1dsSFFOV0gyMTczRzhXVT0='
-# bId='001788fffe174db2'
-
-# home
-# aToken='MWRuUkdndGVUc2VnTjJIZW1FWXVzOFYxZmFFNUlWNFlQOTB4VllmSlkxTT0='
-# bId='001788fffe17b990'
 
 conn = sqlite3.connect('db/welight.db')
 
@@ -42,10 +34,21 @@ def setAllLightsToColor(aToken, bId, xy):
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+xy+'}', "PUT", bId), aToken)
 
 
-srcUser = "we_Light_"
-destUser = "luisceze"
+# srcUser = "we_Light_"
+# destUser = "luisceze"
+# if checkPermission(srcUser, destUser):
+#     (t, b) = getTokenAndBridgeId(destUser)
+#     setAllLightsToColor(t, b, "[0.32,0.1]")
 
-if checkPermission(srcUser, destUser):
-    (t, b) = getTokenAndBridgeId(destUser)    
-    setAllLightsToColor(t, b, "[0.32,0.1]")
+
+# monitoring the twitter account for direct messages
+auth = tweepy.OAuthHandler("IFOyuJtAPeXV5J0Gd0ahomBlA", "izvHwkSJhPpmr0IakpFOFwvs44svrj5rWZ56h1nSrSbqLsNg4N")
+auth.set_access_token("3235468296-2TzMkX6CASeJ8GTBcCIoHOT8PUuD5Zq9FknSwSG", "OuRQFa8yblPS9whaEmxS0cMVowIYWzCtpehxTmx1mCXmM")
+
+api = tweepy.API(auth)
+direct_messages = api.direct_messages()
+
+for dm in direct_messages:
+    print "(" + str(dm.id) + ") " + dm.sender_screen_name +" : "+ dm.text
+    
 
