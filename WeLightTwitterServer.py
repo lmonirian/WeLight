@@ -42,7 +42,61 @@ def processLightCommand(dest, src, text):
     # todo: replace code below with NLTK code to parse light command
     if checkPermission(src, dest):
         (t, b) = getTokenAndBridgeId(dest)
-        setAllLightsToColor(t, b, "[0.32,0.1]")
+        tokens = nltk.word_tokenize(text)
+        tagged = nltk.pos_tag(tokens)
+        for tuple in tagged:
+        	print tuple
+        	if (tuple[1] == "JJ"): ##honing in on adjective
+        		if (tuple[0].startswith("yellow")):
+        			setAllLightsToColor(t, b, "[0.5, 0.44]") 
+        		elif (tuple[0].startswith("blue")):
+        			setAllLightsToColor(t, b, "[0.1, 0.15]") 
+        		elif (tuple[0].startswith("green")):
+        			setAllLightsToColor(t, b, "[0.15, 0.7]")
+        		elif (tuple[0].startswith("orange")):
+        			setAllLightsToColor(t, b, "[0.575, 0.395]")
+        		elif (tuple[0].startswith("indigo")):
+        			setAllLightsToColor(t, b, "[0.25, 0.02]")
+        		elif (tuple[0].startswith("violet")):
+        			setAllLightsToColor(t, b, "[0.25, 0.02]") 
+        		#elif (tuple[0].startswith("red")):
+            		#setAllLightsToColor(t, b, "[0.7, 0.25]") ##all of these have to be JJ in "i want ____ lights" form
+			
+			if (tuple[1] == "NNP"):
+				if (tuple[0].startswith("yellow")):
+					setAllLightsToColor(t, b, "[0.5, 0.44]") 
+        		elif (tuple[0].startswith("blue")):
+        			setAllLightsToColor(t, b, "[0.1, 0.15]") 
+        		elif (tuple[0].startswith("green")):
+        			setAllLightsToColor(t, b, "[0.15, 0.7]")
+        		elif (tuple[0].startswith("orange")):
+        			setAllLightsToColor(t, b, "[0.575, 0.395]")
+        		elif (tuple[0].startswith("indigo")):
+        			setAllLightsToColor(t, b, "[0.25, 0.02]")
+        		elif (tuple[0].startswith("violet")):
+        			setAllLightsToColor(t, b, "[0.25, 0.02]") 
+        			
+			if (tuple[1] == "NN"):
+				print "Hi 1"
+				if (tuple[0].startswith("yellow")):
+					print "Hi 2!"
+					setAllLightsToColor(t, b, "[0.5, 0.44]") 
+				elif (tuple[0].startswith("blue")):
+					setAllLightsToColor(t, b, "[0.1, 0.15]") 
+        		elif (tuple[0].startswith("green")):
+        			setAllLightsToColor(t, b, "[0.15, 0.7]")
+        		elif (tuple[0].startswith("orange")):
+        			setAllLightsToColor(t, b, "[0.575, 0.395]")
+        		elif (tuple[0].startswith("indigo")):
+        			setAllLightsToColor(t, b, "[0.25, 0.02]")
+        		elif (tuple[0].startswith("violet")):
+        			setAllLightsToColor(t, b, "[0.25, 0.02]") 
+					   		
+    		if (tuple[1] == "VBP"):
+    			if (tuple[0].startswith("blink")):
+    				setAllLightsToColor(t, b, "[random.random(), random.random()]") ##"Have the lights blink"
+    				while True:
+    					setAllLightsToColor(t, b, "[random.random(),random.random()]")
 
 def processDMCommand(dm):
     src = dm['sender_screen_name']
