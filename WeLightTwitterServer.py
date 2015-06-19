@@ -3,6 +3,9 @@ import sys
 import sqlite3
 import tweepy
 import time
+from tweepy.streaming import StreamListener
+from tweepy import OAuthHandler
+from tweepy import Stream
 
 from callapi import *
 
@@ -42,8 +45,8 @@ def processLightCommand(dest, src, text):
         setAllLightsToColor(t, b, "[0.32,0.1]")
 
 def processDMCommand(dm):
-    src = dm.sender_screen_name
-    msg_text = dm.text.encode("utf-8")
+    src = dm['sender_screen_name']
+    msg_text = dm['text'].encode("utf-8")
     command_and_parms = msg_text.split(' ', 1 );
     command = command_and_parms[0]
 
@@ -74,6 +77,37 @@ def processDMCommand(dm):
         conn.commit()
         return
 
+class StdOutListener(StreamListener):
+    """ A listener handles tweets are the received from the stream.
+    This is a basic listener that just prints received tweets to stdout.
+    """
+    def on_data(self, data):
+        print "Tweet:"
+        print(data)
+        datadict = json.loads(data)
+
+        if 'direct_message' in data:
+            print datadict
+            dm = datadict['direct_message']
+            print "DM:"
+            print "(" + str(dm['id']) + ") " + dm['sender_screen_name'] +" : "+ dm['text']
+            processDMCommand(dm)
+        
+        if 'event' in data:
+            if datadict['event'] == 'follow':
+                newfollower = datadict['source']['screen_name']
+                if newfollower != 'we_Light_':
+                    print "New follower: " + newfollower
+                    api.create_friendship(screen_name=newfollower)
+                    
+                
+        
+    def on_error(self, status):
+        print "Error:"
+        print(status)
+        
+        
+
 # twitter oAuth
 auth = tweepy.OAuthHandler("IFOyuJtAPeXV5J0Gd0ahomBlA", "izvHwkSJhPpmr0IakpFOFwvs44svrj5rWZ56h1nSrSbqLsNg4N")
 auth.set_access_token("3235468296-2TzMkX6CASeJ8GTBcCIoHOT8PUuD5Zq9FknSwSG", "OuRQFa8yblPS9whaEmxS0cMVowIYWzCtpehxTmx1mCXmM")
@@ -83,24 +117,16 @@ api = tweepy.API(auth)
 highest_dm_id = 0
 print "Old messages:"
 for dm in api.direct_messages():
-    print "(" + str(dm.id) + ") " + dm.sender_screen_name +" : "+ dm.text
-    if dm.id > highest_dm_id:
-        highest_dm_id = dm.id
+     print "(" + str(dm.id) + ") " + dm.sender_screen_name +" : "+ dm.text
+     if dm.id > highest_dm_id:
+         highest_dm_id = dm.id
 
-timer = 0
-print "New messages:"
-while True:
-    for dm in api.direct_messages(highest_dm_id):
-        print "(" + str(dm.id) + ") " + dm.sender_screen_name +" : "+ dm.text
-        processDMCommand(dm)
-        if dm.id > highest_dm_id:
-            highest_dm_id = dm.id
-    
-    if (timer % 10) == 0:
-        print "Checking for followers and automatically add them."
-    for follower in tweepy.Cursor(api.followers).items():
-        follower.follow()
-    
-    time.sleep(60) # wait 60 seconds --- Twitter does rate limiting (i think at 15 reqs per minute)
-    timer = timer + 1
-    
+print "Check for followers and automatically add them."
+for follower in tweepy.Cursor(api.followers).items():
+    print follower
+    follower.follow()
+
+
+l = StdOutListener()
+stream = Stream(auth, l)
+stream.userstream()
