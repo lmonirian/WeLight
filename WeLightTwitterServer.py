@@ -56,7 +56,7 @@ def processDMCommand(dm):
         processLightCommand(str.lstrip(command, "@"), src, command_and_parms[1])
         return
 
-    # command to add new access token: __token <token> <bridgeId>
+    # command to add new access token: __signup <token> <bridgeId>
     if str.startswith(command, "__signup"):
         # spliiting rest of parameters
         parms = command_and_parms[1].split(' ', 1 );
@@ -99,8 +99,12 @@ class StdOutListener(StreamListener):
                 if newfollower != 'we_Light_':
                     print "New follower: " + newfollower
                     api.create_friendship(screen_name=newfollower)
-                    
-                
+                    api.send_direct_message(screen_name=newfollower, 
+                        text='Welcome to WeLight! To signup DM: _signup <token> <bridgeId>')
+                    api.send_direct_message(screen_name=newfollower, 
+                        text='To authorize an user DM: _auth <screen name>')
+                    api.send_direct_message(screen_name=newfollower, 
+                        text='To send a light command DM: @<screen name> <command in natural english, e.g. yellow>')
         
     def on_error(self, status):
         print "Error:"
