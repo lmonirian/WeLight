@@ -121,7 +121,7 @@ def processDMCommand(dm):
         return
 
     # command to add new access token: __signup <token> <bridgeId>
-    if str.startswith(command, "__signup"):
+    if str.startswith(command, "_signup"):
         # spliiting rest of parameters
         parms = command_and_parms[1].split(' ', 1 );
         newToken = parms[0]
@@ -133,7 +133,7 @@ def processDMCommand(dm):
         return
         
     # command to authorize user: __auth @user
-    if str.startswith(command, "__auth"):
+    if str.startswith(command, "_auth"):
         newSrcUser = command_and_parms[1]
         print "New authorization:"+ src + " <- " + newSrcUser
         c = conn.cursor()
