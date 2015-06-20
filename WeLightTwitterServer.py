@@ -3,9 +3,11 @@ import sys
 import sqlite3
 import tweepy
 import time
+import random
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
+
 
 from callapi import *
 
@@ -36,6 +38,14 @@ def setAllLightsToColor(aToken, bId, xy):
     for l in jsonHueInfo["lights"]:
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true}', "PUT", bId), aToken)
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+xy+'}', "PUT", bId), aToken)
+
+def setAllLightsToColorList(aToken, bId, xy_list):
+    jsonHueInfo = getPhilipsHueInfo(aToken, bId)
+    print jsonHueInfo
+    for l in jsonHueInfo["lights"]:
+        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true}', "PUT", bId), aToken)
+        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+random.choice(xy_list)+'}', "PUT", bId), aToken)
+
 
 def processLightCommand(dest, src, text):
     print "Processing light command from "+src+" to "+dest+":"+text
@@ -77,9 +87,7 @@ def processLightCommand(dest, src, text):
         			setAllLightsToColor(t, b, "[0.25, 0.02]") 
         			
 			if (tuple[1] == "NN"):
-				print "Hi 1"
 				if (tuple[0].startswith("yellow")):
-					print "Hi 2!"
 					setAllLightsToColor(t, b, "[0.5, 0.44]") 
 				elif (tuple[0].startswith("blue")):
 					setAllLightsToColor(t, b, "[0.1, 0.15]") 
@@ -91,12 +99,14 @@ def processLightCommand(dest, src, text):
         			setAllLightsToColor(t, b, "[0.25, 0.02]")
         		elif (tuple[0].startswith("violet")):
         			setAllLightsToColor(t, b, "[0.25, 0.02]") 
-					   		
+                elif (tuple[0].startswith("rainbow")):
+                    setAllLightsToColorList(t, b, ["[0.25, 0.02]","[0.15, 0.7]", "[0.5, 0.44]", "[0.25, 0.02]"])
+                    		   		
     		if (tuple[1] == "VBP"):
     			if (tuple[0].startswith("blink")):
     				setAllLightsToColor(t, b, "[random.random(), random.random()]") ##"Have the lights blink"
-    				while True:
-    					setAllLightsToColor(t, b, "[random.random(),random.random()]")
+                    # while True:
+                    #     setAllLightsToColor(t, b, "[random.random(),random.random()]")
 
 def processDMCommand(dm):
     src = dm['sender_screen_name']
