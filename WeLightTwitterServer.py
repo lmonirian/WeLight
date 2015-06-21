@@ -51,6 +51,14 @@ def setAllLightsToColorList(src, aToken, bId, xy_list):
 
     return True
     
+def sendDM(dest, text):
+    try:
+        api.send_direct_message(screen_name=dest, 
+            text=text)            
+    except: 
+        print "ERROR: Internal error sending DM via Tweepy."    
+
+    
 # putting all color names and corresponding x,y here
 wordColorList =[
     ["yellow", "[0.5, 0.44]"],
@@ -82,16 +90,13 @@ def processLightCommand(dest, src, text):
             colorList = colorList + getColorListFromWord(tuple[0])
         
         if colorList == []:
-            api.send_direct_message(screen_name=src, 
-                text='Could not identify any colors from sentence')
+            sendDM(src, 'Could not identify any colors from sentence')
             return
             
         if setAllLightsToColorList(src, t, b, colorList):    		   		
-            api.send_direct_message(screen_name=src, 
-                text='Successfully sent light message to '+dest)    
+            sendDM(src, 'Successfully sent light message to '+dest)    
     else:
-        api.send_direct_message(screen_name=src, 
-            text='You are not authorized to send light messages to '+dest)    
+        sendDM(src, 'You are not authorized to send light messages to '+dest)  
 
 def processDMCommand(dm):
     src = dm['sender_screen_name']
@@ -116,8 +121,7 @@ def processDMCommand(dm):
         c.execute("insert or replace into usertokens values ('"+src+"','"+newbId+"','"+newToken+"')")        
         c.execute("insert into userperms values ('"+src+"','"+src+"')")
         conn.commit()
-        api.send_direct_message(screen_name=src, 
-            text='Successfully updated token and bridge for ' + src)            
+        sendDM(src, 'Successfully updated token and bridge for ' + src)
         return
         
     # command to authorize user: _auth @user
@@ -126,8 +130,7 @@ def processDMCommand(dm):
         print "New authorization:"+ src + " <- " + newSrcUser
         c = conn.cursor()
         c.execute("insert into userperms values ('"+src+"','"+newSrcUser+"')")
-        api.send_direct_message(screen_name=src, 
-            text='Successfully authorized ' + newSrcUser + ' to send light messages to ' + src)            
+        sendDM(src, 'Successfully authorized ' + newSrcUser + ' to send light messages to ' + src)
         conn.commit()
         return
 
@@ -153,12 +156,9 @@ class StdOutListener(StreamListener):
                 if newfollower != 'we_Light_':
                     print "New follower: " + newfollower
                     api.create_friendship(screen_name=newfollower)
-                    api.send_direct_message(screen_name=newfollower, 
-                        text='Welcome to WeLight! To signup DM: _signup <token> <bridgeId>')
-                    api.send_direct_message(screen_name=newfollower, 
-                        text='To authorize an user DM: _auth <screen name>')
-                    api.send_direct_message(screen_name=newfollower, 
-                        text='To send a light command DM: @<screen name> <command in natural english, e.g. yellow>')
+                    sendDM(newfollower, 'Welcome to WeLight! To signup DM: _signup <token> <bridgeId>')
+                    sendDM(newfollower, 'To authorize an user DM: _auth <screen name>')
+                    sendDM(newfollower, 'To send a light command DM: @<screen name> <command in natural english, e.g. yellow>')
         
     def on_error(self, status):
         print "Error:"
