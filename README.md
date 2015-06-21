@@ -1,2 +1,2 @@
 # WeLight
-simple examples written in python to execute simple Philips Hue Light commands
+A twitter bot that enables users to send Phillips Hue light message to each other.
