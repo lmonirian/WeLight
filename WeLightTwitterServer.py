@@ -67,7 +67,8 @@ wordColorList =[
     ["orange", "[0.575, 0.395]"],
     ["indigo", "[0.25, 0.02]"],
     ["violet", "[0.25, 0.02]"],
-    ["red", "[0.7, 0.3]"]
+    ["red", "[0.7, 0.3]"],
+    ["white", "[0.3, 0.35]"]
 ]
 
 def getColorListFromWord(text):
@@ -90,8 +91,8 @@ def processLightCommand(dest, src, text):
             colorList = colorList + getColorListFromWord(tuple[0])
         
         if colorList == []:
-            sendDM(src, 'Could not identify any colors from sentence')
-            return
+            sendDM(src, 'Could not identify any colors from sentence, picking a random one.')
+            colorList = colorList + random.choice(wordColorList)
             
         if setAllLightsToColorList(src, t, b, colorList):    		   		
             sendDM(src, 'Successfully sent light message to '+dest)    
