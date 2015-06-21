@@ -54,11 +54,12 @@ def setAllLightsToColorList(src, aToken, bId, xy_list):
 # putting all color names and corresponding x,y here
 wordColorList =[
     ["yellow", "[0.5, 0.44]"],
-    ["blue", "[0.1, 0.15]"],
-    ["green", "[0.15, 0.7]"],
+    ["blue", "[0.15, 0.08]"],
+    ["green", "[0.25, 0.7]"],
     ["orange", "[0.575, 0.395]"],
     ["indigo", "[0.25, 0.02]"],
-    ["violet", "[0.25, 0.02]"]
+    ["violet", "[0.25, 0.02]"],
+    ["red", "[0.7, 0.3]"]
 ]
 
 def getColorListFromWord(text):
@@ -75,16 +76,17 @@ def processLightCommand(dest, src, text):
         (t, b) = getTokenAndBridgeId(dest)
         tokens = nltk.word_tokenize(text)
         tagged = nltk.pos_tag(tokens)
-        success = False
+        colorList = []
         for tuple in tagged:
             print tuple
-            if (tuple[1] == "JJ"):                
-                success = setAllLightsToColorList(src, t, b, getColorListFromWord(tuple[0]))             
-            if (tuple[1] == "NNP"):
-                success = setAllLightsToColorList(src, t, b, getColorListFromWord(tuple[0]))
-            if (tuple[1] == "NN"):
-                success = setAllLightsToColorList(src, t, b, getColorListFromWord(tuple[0])) 
-        if success:          		   		
+            colorList = colorList + getColorListFromWord(tuple[0])
+        
+        if colorList == []:
+            api.send_direct_message(screen_name=src, 
+                text='Could not identify any colors from sentence')
+            return
+            
+        if setAllLightsToColorList(src, t, b, colorList):    		   		
             api.send_direct_message(screen_name=src, 
                 text='Successfully sent light message to '+dest)    
     else:
