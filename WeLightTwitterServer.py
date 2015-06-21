@@ -32,21 +32,42 @@ def checkPermission(userFrom, userTo):
         return False
     return True
 
-def setAllLightsToColor(aToken, bId, xy):
-    jsonHueInfo = getPhilipsHueInfo(aToken, bId)
-    print jsonHueInfo
-    for l in jsonHueInfo["lights"]:
-        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true}', "PUT", bId), aToken)
-        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+xy+'}', "PUT", bId), aToken)
 
-def setAllLightsToColorList(aToken, bId, xy_list):
-    jsonHueInfo = getPhilipsHueInfo(aToken, bId)
-    print jsonHueInfo
+# picks a random color from xy_list for each light
+def setAllLightsToColorList(src, aToken, bId, xy_list):
+    try:     
+        jsonHueInfo = getPhilipsHueInfo(aToken, bId)
+    except:
+        print "Error communicating with meethue servers."
+        api.send_direct_message(screen_name=src, 
+            text='Error communicating with meethue servers.')
+        return False          
+    
+    # print jsonHueInfo
     for l in jsonHueInfo["lights"]:
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true}', "PUT", bId), aToken)
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+random.choice(xy_list)+'}', "PUT", bId), aToken)
+        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"bri":254}', "PUT", bId), aToken)
 
+    return True
+    
+# putting all color names and corresponding x,y here
+wordColorList =[
+    ["yellow", "[0.5, 0.44]"],
+    ["blue", "[0.1, 0.15]"],
+    ["green", "[0.15, 0.7]"],
+    ["orange", "[0.575, 0.395]"],
+    ["indigo", "[0.25, 0.02]"],
+    ["violet", "[0.25, 0.02]"]
+]
 
+def getColorListFromWord(text):
+    cList = [];
+    for t in wordColorList:
+        if str.startswith(text, t[0]):
+            cList.append(t[1])
+    return cList
+        
 def processLightCommand(dest, src, text):
     print "Processing light command from "+src+" to "+dest+":"+text
     # todo: replace code below with NLTK code to parse light command
@@ -54,59 +75,21 @@ def processLightCommand(dest, src, text):
         (t, b) = getTokenAndBridgeId(dest)
         tokens = nltk.word_tokenize(text)
         tagged = nltk.pos_tag(tokens)
+        success = False
         for tuple in tagged:
-        	print tuple
-        	if (tuple[1] == "JJ"): ##honing in on adjective
-        		if (tuple[0].startswith("yellow")):
-        			setAllLightsToColor(t, b, "[0.5, 0.44]") 
-        		elif (tuple[0].startswith("blue")):
-        			setAllLightsToColor(t, b, "[0.1, 0.15]") 
-        		elif (tuple[0].startswith("green")):
-        			setAllLightsToColor(t, b, "[0.15, 0.7]")
-        		elif (tuple[0].startswith("orange")):
-        			setAllLightsToColor(t, b, "[0.575, 0.395]")
-        		elif (tuple[0].startswith("indigo")):
-        			setAllLightsToColor(t, b, "[0.25, 0.02]")
-        		elif (tuple[0].startswith("violet")):
-        			setAllLightsToColor(t, b, "[0.25, 0.02]") 
-        		#elif (tuple[0].startswith("red")):
-            		#setAllLightsToColor(t, b, "[0.7, 0.25]") ##all of these have to be JJ in "i want ____ lights" form
-			
-			if (tuple[1] == "NNP"):
-				if (tuple[0].startswith("yellow")):
-					setAllLightsToColor(t, b, "[0.5, 0.44]") 
-        		elif (tuple[0].startswith("blue")):
-        			setAllLightsToColor(t, b, "[0.1, 0.15]") 
-        		elif (tuple[0].startswith("green")):
-        			setAllLightsToColor(t, b, "[0.15, 0.7]")
-        		elif (tuple[0].startswith("orange")):
-        			setAllLightsToColor(t, b, "[0.575, 0.395]")
-        		elif (tuple[0].startswith("indigo")):
-        			setAllLightsToColor(t, b, "[0.25, 0.02]")
-        		elif (tuple[0].startswith("violet")):
-        			setAllLightsToColor(t, b, "[0.25, 0.02]") 
-        			
-			if (tuple[1] == "NN"):
-				if (tuple[0].startswith("yellow")):
-					setAllLightsToColor(t, b, "[0.5, 0.44]") 
-				elif (tuple[0].startswith("blue")):
-					setAllLightsToColor(t, b, "[0.1, 0.15]") 
-        		elif (tuple[0].startswith("green")):
-        			setAllLightsToColor(t, b, "[0.15, 0.7]")
-        		elif (tuple[0].startswith("orange")):
-        			setAllLightsToColor(t, b, "[0.575, 0.395]")
-        		elif (tuple[0].startswith("indigo")):
-        			setAllLightsToColor(t, b, "[0.25, 0.02]")
-        		elif (tuple[0].startswith("violet")):
-        			setAllLightsToColor(t, b, "[0.25, 0.02]") 
-                elif (tuple[0].startswith("rainbow")):
-                    setAllLightsToColorList(t, b, ["[0.25, 0.02]","[0.15, 0.7]", "[0.5, 0.44]", "[0.25, 0.02]"])
-                    		   		
-    		if (tuple[1] == "VBP"):
-    			if (tuple[0].startswith("blink")):
-    				setAllLightsToColor(t, b, "[random.random(), random.random()]") ##"Have the lights blink"
-                    # while True:
-                    #     setAllLightsToColor(t, b, "[random.random(),random.random()]")
+            print tuple
+            if (tuple[1] == "JJ"):                
+                success = setAllLightsToColorList(src, t, b, getColorListFromWord(tuple[0]))             
+            if (tuple[1] == "NNP"):
+                success = setAllLightsToColorList(src, t, b, getColorListFromWord(tuple[0]))
+            if (tuple[1] == "NN"):
+                success = setAllLightsToColorList(src, t, b, getColorListFromWord(tuple[0])) 
+        if success:          		   		
+            api.send_direct_message(screen_name=src, 
+                text='Successfully sent light message to '+dest)    
+    else:
+        api.send_direct_message(screen_name=src, 
+            text='You are not authorized to send light messages to '+dest)    
 
 def processDMCommand(dm):
     src = dm['sender_screen_name']
@@ -120,7 +103,7 @@ def processDMCommand(dm):
         processLightCommand(str.lstrip(command, "@"), src, command_and_parms[1])
         return
 
-    # command to add new access token: __signup <token> <bridgeId>
+    # command to add new access token: _signup <token> <bridgeId>
     if str.startswith(command, "_signup"):
         # spliiting rest of parameters
         parms = command_and_parms[1].split(' ', 1 );
@@ -128,16 +111,21 @@ def processDMCommand(dm):
         newbId = parms[1]
         print "Signing up new user:"+ src+" b:"+newbId+" t:"+newToken
         c = conn.cursor()
-        c.execute("insert into usertokens values ('"+src+"','"+newbId+"','"+newToken+"')")
+        c.execute("insert or replace into usertokens values ('"+src+"','"+newbId+"','"+newToken+"')")        
+        c.execute("insert into userperms values ('"+src+"','"+src+"')")
         conn.commit()
+        api.send_direct_message(screen_name=src, 
+            text='Successfully updated token and bridge for ' + src)            
         return
         
-    # command to authorize user: __auth @user
+    # command to authorize user: _auth @user
     if str.startswith(command, "_auth"):
         newSrcUser = command_and_parms[1]
         print "New authorization:"+ src + " <- " + newSrcUser
         c = conn.cursor()
         c.execute("insert into userperms values ('"+src+"','"+newSrcUser+"')")
+        api.send_direct_message(screen_name=src, 
+            text='Successfully authorized ' + newSrcUser + ' to send light messages to ' + src)            
         conn.commit()
         return
 
@@ -151,7 +139,7 @@ class StdOutListener(StreamListener):
         datadict = json.loads(data)
 
         if 'direct_message' in data:
-            print datadict
+            # print datadict
             dm = datadict['direct_message']
             print "DM:"
             print "(" + str(dm['id']) + ") " + dm['sender_screen_name'] +" : "+ dm['text']
@@ -191,7 +179,7 @@ for dm in api.direct_messages():
 
 print "Check for followers and automatically add them."
 for follower in tweepy.Cursor(api.followers).items():
-    print follower
+    print follower.screen_name
     follower.follow()
 
 
