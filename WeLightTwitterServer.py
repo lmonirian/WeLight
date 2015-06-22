@@ -211,7 +211,7 @@ wordColorList =[
     ["tomato", "[0.6112, 0.3261]"],
     ["wheat", "[0.3852, 0.3737]"],
     ["white smoke", "[0.3227, 0.329]"],
-    ["yellow green", "[0.3517, 0.5618"],
+    ["yellow green", "[0.3517, 0.5618]"],
     ##start of analogies
     ["forest", "[0.2097, 0.6732]"],
     ["sky", "[0.2206, 0.2948]"],
