@@ -38,10 +38,9 @@ def setAllLightsToColorList(src, aToken, bId, xy_list):
     try:     
         jsonHueInfo = getPhilipsHueInfo(aToken, bId)
     except:
-        print "Error communicating with meethue servers."
-        api.send_direct_message(screen_name=src, 
-            text='Error communicating with meethue servers.')
-        return False          
+		print "Error communicating with meethue servers."
+		sendDM(src, 'Error communicating with meethue servers.')
+		return False          
     
     # print jsonHueInfo
     for l in jsonHueInfo["lights"]:
@@ -56,7 +55,11 @@ def sendDM(dest, text):
         api.send_direct_message(screen_name=dest, 
             text=text)            
     except: 
-        print "ERROR: Internal error sending DM via Tweepy."    
+		try: 
+			api.send_direct_message(screen_name=dest, 
+	            text=text)            
+		except:
+			print "ERROR: Internal error sending DM via Tweepy."    
 
     
 # putting all color names and corresponding x,y here
@@ -292,14 +295,14 @@ class StdOutListener(StreamListener):
         print(data)
         datadict = json.loads(data)
 
-        if 'direct_message' in data:
+        if 'direct_message' in datadict:
             # print datadict
             dm = datadict['direct_message']
             print "DM:"
             print "(" + str(dm['id']) + ") " + dm['sender_screen_name'] +" : "+ dm['text']
             processDMCommand(dm)
         
-        if 'event' in data:
+        if 'event' in datadict:
             if datadict['event'] == 'follow':
                 newfollower = datadict['source']['screen_name']
                 if newfollower != 'we_Light_':
