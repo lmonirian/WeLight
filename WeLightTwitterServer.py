@@ -4,10 +4,17 @@ import sqlite3
 import tweepy
 import time
 import random
+import urllib2
+import simplejson
+import wget
+
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 
+from PIL import Image, ImageDraw
+from colormath.color_objects import XYZColor, sRGBColor
+from colormath.color_conversions import convert_color
 
 from callapi import *
 
@@ -228,7 +235,88 @@ def getColorListFromWord(text):
         if str.startswith(text, t[0]):
             cList.append(t[1])
     return cList
+    
+
+def getColorsFromImg(infile, outfile="tmp.jpg", numcolors=16, swatchsize=20, resize=150):
+ 
+    try: 
+        image = Image.open(infile)
+    except: 
+        return []
+    image = image.resize((resize, resize))
+    result = image.convert('P', palette=Image.ADAPTIVE, colors=numcolors)
+    result.putalpha(0)
+    colors = result.getcolors(resize*resize)
+    
+    xyColorList = []
+    totalCount = 0
+    for c in colors:
+        totalCount = totalCount + c[0]
+    print "total count %d" % (totalCount)
+ 
+    for c in colors:
+        print c
+        r = c[1][0]
+        g = c[1][1]
+        b = c[1][2]
+        occPercent = (float(c[0])/float(totalCount))*100
+        s = "R = %d G = %d B = %d occ = %d" % (r, g, b, occPercent)
+        print s
         
+        rgbColor = sRGBColor(r, g, b, is_upscaled=True)
+#        print rgbColor
+        xyzColor = convert_color(rgbColor, XYZColor)
+#        print xyzColor
+        totalXYZ = (xyzColor.get_value_tuple()[0] + xyzColor.get_value_tuple()[1] + 
+            xyzColor.get_value_tuple()[2])
+
+        if totalXYZ == 0:
+            continue;
+
+        x = xyzColor.get_value_tuple()[0] / totalXYZ
+        y = xyzColor.get_value_tuple()[1] / totalXYZ
+            
+        xyColor_string="[%1.3f, %1.3f]" % (x, y)
+
+        for i in range(0, int(occPercent)):
+            xyColorList.append(xyColor_string)
+        
+    # pal = Image.new('RGB', (swatchsize*numcolors, swatchsize))
+    # draw = ImageDraw.Draw(pal)
+    # posx = 0
+    # for count, col in colors:
+    #     draw.rectangle([posx, 0, posx+swatchsize, swatchsize], fill=col)
+    #     posx = posx + swatchsize
+    # del draw
+    # pal.save(outfile, "PNG")
+    
+    return xyColorList
+    
+def getColorsFromImgSearch(txt):
+    url = ('https://ajax.googleapis.com/ajax/services/search/images?' +
+           'v=1.0&q='+urllib2.quote(txt))
+
+    request = urllib2.Request(url, None, {'Referer': "http://www.cs.washington.edu/"})
+    response = urllib2.urlopen(request)
+
+    # Process the JSON string.
+    results = simplejson.load(response)
+    # print results
+
+    cList = []
+    
+    for item in results['responseData']['results']:
+        print item['url']
+        try: 
+            file = wget.download(item['url'], out="downloads/")
+        except:
+            continue
+        cList = cList + getColorsFromImg(file)
+        # print "Removing " + file
+        # os.remove(file)
+
+    return cList
+
 def processLightCommand(dest, src, text):
     print "Processing light command from "+src+" to "+dest+":"+text
     # todo: replace code below with NLTK code to parse light command
@@ -242,8 +330,8 @@ def processLightCommand(dest, src, text):
             colorList = colorList + getColorListFromWord(tuple[0])
         
         if colorList == []:
-            sendDM(src, 'Could not identify any colors from sentence, picking a random one.')
-            colorList = colorList + random.choice(wordColorList)
+            sendDM(src, 'Could not directly identify colors from sentence, using Google Images.')
+            colorList = getColorsFromImgSearch(text)
             
         if setAllLightsToColorList(src, t, b, colorList):    		   		
             sendDM(src, 'Successfully sent light message to '+dest)    
@@ -337,6 +425,11 @@ for follower in tweepy.Cursor(api.followers).items():
     follower.follow()
 
 
-l = StdOutListener()
-stream = Stream(auth, l)
-stream.userstream()
+while True:
+    try: 
+        l = StdOutListener()
+        stream = Stream(auth, l)
+        stream.userstream()
+    except:
+        print "tweepy error, restarting"
+        continue

@@ -56,7 +56,7 @@ def getPhilipsHueInfo(accessToken, bridgeId):
   payload = {'token': accessToken, 'bridgeid': bridgeId};
   print payload
   r = requests.get(API_STATUS_ADDRESS, params=payload)
-  print (json.dumps(json.loads(r.content),indent=4))
+  # print (json.dumps(json.loads(r.content),indent=4))
   res = json.loads(r.content);
   return res
 
