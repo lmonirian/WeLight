@@ -50,7 +50,7 @@ def setAllLightsToColorList(src, aToken, bId, xy_list):
 		sendDM(src, 'Error communicating with meethue servers.')
 		return False          
     
-    # print jsonHueInfo
+    print jsonHueInfo
     for l in jsonHueInfo["lights"]:
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true}', "PUT", bId), aToken)
         philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+random.choice(xy_list)+'}', "PUT", bId), aToken)
@@ -430,10 +430,10 @@ print "Temp directory for images: " + tempfile.gettempdir()
 
 
 while True:
-    try: 
-        l = StdOutListener()
-        stream = Stream(auth, l)
-        stream.userstream()
+    try:
+		l = StdOutListener()
+		stream = Stream(auth, l)
+		stream.userstream()
     except:
         print "tweepy error, restarting"
         continue
