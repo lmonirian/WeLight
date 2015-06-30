@@ -52,9 +52,7 @@ def setAllLightsToColorList(src, aToken, bId, xy_list):
     
     print jsonHueInfo
     for l in jsonHueInfo["lights"]:
-        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true}', "PUT", bId), aToken)
-        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"xy":'+random.choice(xy_list)+'}', "PUT", bId), aToken)
-        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"bri":254}', "PUT", bId), aToken)
+        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true, "xy":'+random.choice(xy_list)+', "bri":254}', "PUT", bId), aToken)
 
     return True
     
