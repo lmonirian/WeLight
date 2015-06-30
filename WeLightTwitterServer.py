@@ -7,6 +7,7 @@ import random
 import urllib2
 import simplejson
 import wget
+import tempfile
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -308,7 +309,7 @@ def getColorsFromImgSearch(txt):
     for item in results['responseData']['results']:
         print item['url']
         try: 
-            file = wget.download(item['url'], out="downloads/")
+            file = wget.download(item['url'], out=tempfile.gettempdir())
         except:
             continue
         cList = cList + getColorsFromImg(file)
@@ -423,6 +424,9 @@ print "Check for followers and automatically add them."
 for follower in tweepy.Cursor(api.followers).items():
     print follower.screen_name
     follower.follow()
+
+tempfile.mkdtemp(prefix="welightimgs")
+print "Temp directory for images: " + tempfile.gettempdir()
 
 
 while True:

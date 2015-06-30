@@ -5,3 +5,4 @@ tweepy
 wget
 Image
 colormath
+simplejson
