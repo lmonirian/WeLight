@@ -6,3 +6,4 @@ wget
 Image
 colormath
 simplejson
+wget

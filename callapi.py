@@ -39,6 +39,27 @@ def constructCustomMsg(apiEndPoint, command, method, bridgeId):
   custom_control_message_structure = 'clipmessage={ bridgeId: "'+bridgeId+'", clipCommand: { url: "/api/0/'+apiEndPoint+'", method: "'+method+'", body: '+command+' } }'
   return custom_control_message_structure
 
+def constructCustomCommand(apiEndPoint, command, method, bridgeId):
+  """
+  method can be PUT/POST/GET all must be string
+  apiEndPoint is 
+  command is JSON format same as the official documentation
+
+  :type apiEndPoint: str
+  :param apiEndPoint: The same as oficial API /api/<username>/\*\*\* by removing /api/<usename>/ part
+  :type command: str
+  :param command: JSON string of the command to be sent
+  :type method: str
+  :param command: PUT/GET/POST/DELETE in string format
+  :rtype: str
+  :return: the actual API call body sent to the official server
+
+  """
+  #apiEndPoint and command needs to be string
+  #command needs to conform to json format
+  custom_control_message_structure = '{ bridgeId: "'+bridgeId+'", clipCommand: { url: "/api/0/'+apiEndPoint+'", method: "'+method+'", body: '+command+' } }'
+  return custom_control_message_structure
+
 def philipsControlCustom(msgToSent, accessToken):
   """
   actual message sender

@@ -8,6 +8,8 @@ import urllib2
 import simplejson
 import wget
 import tempfile
+import re
+import threading
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -50,9 +52,17 @@ def setAllLightsToColorList(src, aToken, bId, xy_list):
 		sendDM(src, 'Error communicating with meethue servers.')
 		return False          
     
-    print jsonHueInfo
+    #print jsonHueInfo
+    # myhueMsg = "clipmessage = ["
+    # comma = ""
+    # for l in jsonHueInfo["lights"]:
+    #     myhueMsg = myhueMsg + comma + constructCustomCommand("lights/"+l+"/state", '{"on":true, "xy":'+random.choice(xy_list)+', "bri":254}', "PUT", bId)
+    #     comma = ","
+    # myhueMsg = myhueMsg + "]"
+
     for l in jsonHueInfo["lights"]:
-        philipsControlCustom(constructCustomMsg("lights/"+l+"/state", '{"on":true, "xy":'+random.choice(xy_list)+', "bri":254}', "PUT", bId), aToken)
+        myhueMsg = constructCustomMsg("lights/"+l+"/state", '{"on":true, "xy":'+random.choice(xy_list)+', "bri":254}', "PUT", bId)
+        philipsControlCustom(myhueMsg, aToken)
 
     return True
     
@@ -236,7 +246,7 @@ def getColorListFromWord(text):
     return cList
     
 
-def getColorsFromImg(infile, outfile="tmp.jpg", numcolors=16, swatchsize=20, resize=150):
+def getColorsFromImg(infile, outfile="tmp.jpg", numcolors=8, swatchsize=20, resize=150):
  
     try: 
         image = Image.open(infile)
@@ -259,6 +269,8 @@ def getColorsFromImg(infile, outfile="tmp.jpg", numcolors=16, swatchsize=20, res
         g = c[1][1]
         b = c[1][2]
         occPercent = (float(c[0])/float(totalCount))*100
+        if occPercent > 20:
+            occPercent = 12
         s = "R = %d G = %d B = %d occ = %d" % (r, g, b, occPercent)
         print s
         
@@ -316,26 +328,37 @@ def getColorsFromImgSearch(txt):
 
     return cList
 
-def processLightCommand(dest, src, text):
+def processLightCommand(t, b, dest, src, text, url=None):
     print "Processing light command from "+src+" to "+dest+":"+text
     # todo: replace code below with NLTK code to parse light command
-    if checkPermission(src, dest):
-        (t, b) = getTokenAndBridgeId(dest)
-        tokens = nltk.word_tokenize(text)
-        tagged = nltk.pos_tag(tokens)
-        colorList = []
+        
+    tokens = nltk.word_tokenize(text)
+    tagged = nltk.pos_tag(tokens)
+    colorList = []
+        
+    if url != None:
+        print "Getting colors from: "+url
+        try: 
+            file = wget.download(url, out=tempfile.gettempdir())
+            colorList = getColorsFromImg(file)
+        except:
+            print "Error getting image from URL."
+    else: 
         for tuple in tagged:
             print tuple
             colorList = colorList + getColorListFromWord(tuple[0])
-        
-        if colorList == []:
-            sendDM(src, 'Could not directly identify colors from sentence, using Google Images.')
-            colorList = getColorsFromImgSearch(text)
+                
+    if colorList == []:
+        sendDM(src, 'Could not directly identify colors from message, using Google Images.')
+        colorList = getColorsFromImgSearch(text)
+
+    if colorList == []:
+        sendDM(src, 'Nothing found, picking random color.')
+        colorList = random.choice(wordColorList)[1]
             
-        if setAllLightsToColorList(src, t, b, colorList):    		   		
-            sendDM(src, 'Successfully sent light message to '+dest)    
-    else:
-        sendDM(src, 'You are not authorized to send light messages to '+dest)  
+    if setAllLightsToColorList(src, t, b, colorList):    		   		
+        sendDM(src, 'Successfully sent light message to ' + dest)    
+        sendDM(dest, 'You just received a light message: ' + text)
 
 def processDMCommand(dm):
     src = dm['sender_screen_name']
@@ -346,7 +369,21 @@ def processDMCommand(dm):
 
     # light command to a user: @<dest> light command
     if str.startswith(command, "@"):
-        processLightCommand(str.lstrip(command, "@"), src, command_and_parms[1])
+        imgURL = None
+        if 'media' in dm['entities']:
+            media = dm['entities']['media'][0]
+            imgURL = media['media_url']
+            print "Found image: " + imgURL
+        
+        dest = str.lstrip(command, "@")
+        if checkPermission(src, dest):
+            (t, b) = getTokenAndBridgeId(dest)
+            thread = threading.Thread(target=processLightCommand, args=(t, b, dest, src, command_and_parms[1], imgURL))
+            thread.start()
+            #processLightCommand(t, b, dest, src, command_and_parms[1], imgURL)
+        else: 
+            sendDM(src, 'You are not authorized to send light messages to '+dest)  
+            
         return
 
     # command to add new access token: _signup <token> <bridgeId>
@@ -388,6 +425,7 @@ class StdOutListener(StreamListener):
             print "DM:"
             print "(" + str(dm['id']) + ") " + dm['sender_screen_name'] +" : "+ dm['text']
             processDMCommand(dm)
+
         
         if 'event' in datadict:
             if datadict['event'] == 'follow':
@@ -426,12 +464,15 @@ for follower in tweepy.Cursor(api.followers).items():
 tempfile.mkdtemp(prefix="welightimgs")
 print "Temp directory for images: " + tempfile.gettempdir()
 
+# l = StdOutListener()
+# stream = Stream(auth, l)
+# stream.userstream()
 
 while True:
-    try:
-		l = StdOutListener()
-		stream = Stream(auth, l)
-		stream.userstream()
-    except:
-        print "tweepy error, restarting"
-        continue
+ try:
+     l = StdOutListener()
+     stream = Stream(auth, l)
+     stream.userstream()
+ except:
+     print "tweepy error, restarting"
+     continue
